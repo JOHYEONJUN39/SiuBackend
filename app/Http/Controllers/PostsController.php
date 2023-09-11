@@ -114,4 +114,68 @@ class PostsController extends Controller
 
         return response()->json($posts);
     }
+
+    // 게시글 수정
+    // 제목만 수정 / 내용만 수정 / 태그 삭제 / 태그 추가
+    public function updatePost(Request $request, $id){
+        $post = Post::find($id);
+        
+        if(!$post) {
+            return response()->json(['message' => '게시글을 찾을 수 없습니다.'], 404);
+        }
+
+        // 요청에서 수정할 데이터를 추출
+        $title = $request->input('title');
+        $article = $request->input('article');
+        $tagData = $request->input('tags',[]);
+
+        // 원래 게시글의 태그 확인
+        // pluck 함수는 DB 결과 집합에서 원하는 컬럼의 값을 추출하는데 사용됨
+        // $oldTags = $post->tags->pluck('tag_name')->toArray();
+
+        $existingTagIds = $post->tags->pluck('id')->toArray();
+        // 새로운 태그 목록으로 부터 태그 Id를 가져옴
+
+        $newTagIds = [];
+        foreach($tagData as $tagName) {
+            $tag = Tag::firstOrCreate(['tag_name' => $tagName]);
+            $newTagIds[] = $tag->id;
+        }
+
+        // 게시글의 태그를 새로운 태그로 업데이트
+        $post->tags()->sync($newTagIds);
+
+        // 연결되지 않은 기존 태그 삭제
+        // $existingTagIds 와 $newTagIds를 비교 후 $existingTagIds에만 존재하는 값을 삭제
+        $tagsToDelete = array_diff($existingTagIds, $newTagIds);
+        foreach ($tagsToDelete as $tagId) {
+            $post->tags()->detach($tagId);
+        }
+
+        // 게시글과 엮인 태그 확인 및 해당 태그들을 가진 게시물이 없을 시 삭제
+        $tags = $post->tags;
+
+        // 태그 중 post_tags 테이블에 사용 되지 않는 태그 삭제
+        foreach($tags as $tag) {
+            if(!$tag->posts()->exists()) {
+                // post_tags 테이블에 사용되지 않는 태그 삭제
+                $tag->delete();
+            }
+        }
+
+        // 제목만 수정
+        if (!is_null($title)) {
+            $post->title = $title;
+        }
+
+        // 내용만 수정
+        if (!is_null($article)) {
+            $post->article = $article;
+        }
+
+
+        $post->save();
+
+        return response()->json(['message' => '게시글이 성공적으로 수정되었습니다.']);
+    }
 }

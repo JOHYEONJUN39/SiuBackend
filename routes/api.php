@@ -33,3 +33,6 @@ Route::get('/postTags', [PostsController::class, 'retrievePostTagId']);
 Route::get('/postSortingView', [PostsController::class, 'retrievePostView']);
 // 최근 게시물 순 조회
 Route::get('/postSortingRecent', [PostsController::class, 'retrieveRecentPost']);
+
+/* 게시물 수정 요청 */
+Route::patch('/posts/update/{id}', [PostsController::class, 'updatePost']);
