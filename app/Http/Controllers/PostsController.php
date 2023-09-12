@@ -78,8 +78,8 @@ class PostsController extends Controller
             // 게시글이 존재하지 않을 경우 404 에러 반환 또는 다른 처리
             return response()->json(['message' => '게시글을 찾을 수 없습니다.'], 404);
         }
-        // 사용자 정보 넘겨주기 (미구현)
-
+        // 사용자 정보 넘겨주기
+        
         // 조회수 증가
         $post->view++;
         $post->save();
