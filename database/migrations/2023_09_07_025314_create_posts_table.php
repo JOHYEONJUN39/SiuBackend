@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('title', 20);
             $table->string('article', 1000);
-            $table->unsignedInteger('view');
+            $table->unsignedInteger('view')->default(0);
             $table->string('user_id');
             $table->timestamps();
         });
