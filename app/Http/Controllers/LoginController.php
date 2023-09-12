@@ -20,7 +20,7 @@ class LoginController extends Controller
         if(Auth::attempt(['id' => $credentials['id'], 'password' => $credentials['password']])) {
             $request->session()->regenerate();
 
-            return response()->json(['message' => 'logged in successfully'], 200);
+            return response()->json($request->user());
         }
 
         return response()->json([
