@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\LogoutController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostsController;
@@ -20,15 +21,19 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-
-
-    // Route::get('/user/{id}', [UserController::class, 'show']);
+    /** Get userInfo by ID */
+    Route::get('/user/{id}', [UserController::class, 'show']);
+    /** Edit userInfo */
+    Route::patch('/user', [UserController::class, 'update']);
+    /** Delete Userdata in DB */
+    Route::delete('/user/{id}', [UserController::class, 'destroy']);
     
-    // Route::patch('/user', [UserController::class, 'update']);
-    
-    // Route::delete('/user/{id}', [UserController::class, 'destroy']);
-
+    /**
+     * User Logout
+     */
+    Route::post('/logout', [LogoutController::class, 'logout']);
 });
+
 /**
  * User Login
  */
@@ -38,6 +43,8 @@ Route::post('/login', [LoginController::class, 'authenticate']);
  * User Register
  */
 Route::post('/register', [UserController::class, 'store']);
+
+
 
 /* 게시글 작성 post 요청 받을 시 */
 Route::post('/createPost', [PostsController::class, 'createPost']);
