@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ImageHelper;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+// use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -12,16 +14,16 @@ class UserController extends Controller
     public function store(Request $request) {
         $request->validate([
             'id' => 'required',
-            'nickname' => 'required',
             'password' => 'required',
         ]);
 
+        // when user registered, default nickname is userId
         User::create([
             'id' => $request->id,
-            'nickname' => $request->nickname,
+            'nickname' => $request->id,
             'password' => $request->password,
+            'profile_image' => env('DEFAULT_PROFILE_IMAGE_PATH'),
         ]);
-
         return response()->json(['message' => 'User add successfully'], 201);        
     }
 
@@ -42,6 +44,12 @@ class UserController extends Controller
 
         if(isset($request->password)) {
             User::where('id', $request->id)->update(['password' => Hash::make($request->password)]);
+        }
+
+        /** store user profile image */
+        if(isset($request->profileImage)) {
+            $imageHelper = new ImageHelper();
+            $path = $imageHelper->storeProfileImage($request->profileImage, $request->id);
         }
 
         return response()->json(['message' => 'User updated successfully'], 200);
