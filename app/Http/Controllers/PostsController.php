@@ -90,8 +90,8 @@ class PostsController extends Controller
 
     // 특정 태그로 조회
     public function retrievePostTagId(Request $request){
-        $tagName = $request->input('tag_name');
 
+        $tagName = $request->input('tag');
         // 요청 받은 태그를 가진 게시물을 검색
         $tag = Tag::where('tag_name', $tagName)->first();
 
