@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Auth;
 
 class LogoutController extends Controller
 {
-    //
-    public function logout(Request $request) {
+    
+    public function __invoke(Request $request) {
         // 왜 sanctum 가드가 아니라 web을 사용하는거지
         Auth::guard('web')->logout();
         $request->session()->invalidate();
