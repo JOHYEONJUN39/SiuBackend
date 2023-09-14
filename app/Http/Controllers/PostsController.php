@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Models\Posttag;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class PostsController extends Controller
 {
@@ -102,7 +103,28 @@ class PostsController extends Controller
         // 해당 태그와 연결된 게시글을 가져옴
         $posts = $tag->posts;
 
-        return response()->json(['posts' => $posts]);
+        // 해당 게시글과 연관된 모든 태그들을 가져옴
+        $relatedTags = $tag->posts->flatMap(function ($post) {
+            return $post->tags->pluck('tag_name');
+        });
+
+        // json 반환 방식 설정
+        $data = [
+            'posts' => $posts->map(function($post) {
+                return [
+                    'id' => $post->id,
+                    'title' => $post->title,
+                    'article' => $post->article,
+                    'view' => $post->view,
+                    'created_at' => $post->created_at,
+                    'updated_at' => $post->updated_at,
+                ];
+            }),
+            'relatedTags' => $relatedTags
+        ];
+
+        return response()->json([$data]);
+        // 태그 이름값도 보내 주어야 함
     }
 
     // 조회수 순 정렬 조회
@@ -110,7 +132,6 @@ class PostsController extends Controller
         $posts = Post::orderBy('view','desc')->get();
 
         return response()->json($posts);
-        // return response()->json(['message' => '조회순 정렬']);
     }
 
     // 최근 순 정렬 조회
@@ -178,9 +199,54 @@ class PostsController extends Controller
             $post->article = $article;
         }
 
-
         $post->save();
 
         return response()->json(['message' => '게시글이 성공적으로 수정되었습니다.']);
+    }
+
+    /* 게시글 검색 */
+    // 제목+내용 연관어 검색
+    public function search($search){
+        $posts = Post::where('title', 'like', "$search%")
+                     ->orWhere('article', 'like', "$search%")
+                     ->get();
+
+        return response()->json(['posts' => $posts]);
+    }
+
+    // 제목+내용 일치 검색
+    public function searchCorrect($search){
+        $posts = Post::where('title', 'like', "$search")
+                     ->orWhere('article', 'like', "$search")
+                     ->with('tags') // 'tags' 관계 로드
+                     ->get();
+
+        $tags = $posts->map(function ($post) {
+            return $post->tags->pluck('tag_name');
+        })->flatten();
+
+        $data = [
+            'posts' => $posts->map(function($post) {
+                return [
+                    'id' => $post->id,
+                    'title' => $post->title,
+                    'article' => $post->article,
+                    'view' => $post->view,
+                    'created_at' => $post->created_at,
+                    'updated_at' => $post->updated_at,
+                ];
+            }),
+            'tag_name' => $tags
+        ];
+        
+
+        return response()->json([$data]);
+    }
+
+    // 연관 태그 검색
+    public function searchTags(Request $request){
+        $searchQuery = $request->input('tag');
+        $posts = Tag::where('tag_name', 'like', "$searchQuery%")->get();
+        return response()->json(['posts' => $posts]);
     }
 }
