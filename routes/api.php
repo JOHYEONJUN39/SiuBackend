@@ -25,14 +25,15 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::get('/user/{id}', [UserController::class, 'show']);
     /** Edit userInfo */
     Route::patch('/user', [UserController::class, 'update']);
-    /** Delete Userdata in DB */
-    Route::delete('/user/{id}', [UserController::class, 'destroy']);
+
     
     /**
      * User Logout
      */
     Route::post('/logout', [LogoutController::class, 'logout']);
 });
+    /** Delete Userdata in DB */
+    Route::delete('/user/{id}', [UserController::class, 'destroy']);
 
 /**
  * User Login

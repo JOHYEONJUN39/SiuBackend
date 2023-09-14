@@ -9,12 +9,12 @@ class LoginController extends Controller
 {
     //
     public function authenticate(Request $request) {
-        // $credentials = $request->validate([
-        //     'id' => ['required'],
-        //     'password' => ['required'],
-        // ]);
+        $credentials = $request->validate([
+            'id' => 'required',
+            'password' => 'required',
+        ]);
 
-        $credentials = $request->only(['id', 'password']);
+        // $credentials = $request->only(['id', 'password']);
         
 
         if(Auth::attempt(['id' => $credentials['id'], 'password' => $credentials['password']])) {
