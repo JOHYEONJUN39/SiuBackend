@@ -6,7 +6,6 @@ use App\Helpers\ImageHelper;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-// use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -50,6 +49,7 @@ class UserController extends Controller
         if(isset($request->profileImage)) {
             $imageHelper = new ImageHelper();
             $path = $imageHelper->storeProfileImage($request->profileImage, $request->id);
+            User::where('id', $request->id)->update(['profile_image' => $path]);
         }
 
         return response()->json(['message' => 'User updated successfully'], 200);
