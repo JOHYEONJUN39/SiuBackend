@@ -74,4 +74,4 @@ Route::get('/posts/search/{titleArticle}',[PostsController::class, 'search']);
 Route::get('/posts/search/{titleArticle}/correct',[PostsController::class, 'searchCorrect']);
 
 // 게시글 연관 태그 검색
-Route::get('/posts/search/tags',[PostsController::class, 'searchTags']); 
+Route::get('/posts/search/tag/{tag}',[PostsController::class, 'relatedPostTags']); 

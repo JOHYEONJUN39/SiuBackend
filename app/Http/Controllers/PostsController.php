@@ -232,6 +232,7 @@ class PostsController extends Controller
                     'title' => $post->title,
                     'article' => $post->article,
                     'view' => $post->view,
+                    'user_id' => $post->user_id,
                     'created_at' => $post->created_at,
                     'updated_at' => $post->updated_at,
                 ];
@@ -244,9 +245,19 @@ class PostsController extends Controller
     }
 
     // 연관 태그 검색
-    public function searchTags(Request $request){
-        $searchQuery = $request->input('tag');
-        $posts = Tag::where('tag_name', 'like', "$searchQuery%")->get();
-        return response()->json(['posts' => $posts]);
+    public function relatedPostTags($tag){
+
+        // 태그와 연관된 게시물을 가져옴
+        $posts = Tag::where('tag_name', 'like', "$tag%")->get();
+
+        $data = [
+            'posts' => $posts->map(function($post) {
+                return [
+                    'tag_name' => $post->tag_name,
+                ];
+            }),
+        ];
+        
+        return response()->json([$data]);
     }
 }
