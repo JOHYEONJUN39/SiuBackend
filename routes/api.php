@@ -50,3 +50,13 @@ Route::get('/postSortingRecent', [PostsController::class, 'retrieveRecentPost'])
 
 /* 게시물 수정 요청 */
 Route::patch('/posts/update/{id}', [PostsController::class, 'updatePost']);
+
+/* 게시글 검색 요청 */
+// 게시글 연관 제목+내용 검색
+Route::get('/posts/search/{titleArticle}',[PostsController::class, 'search']); 
+
+// 게시글 제목+내용 일치 검색
+Route::get('/posts/search/{titleArticle}/correct',[PostsController::class, 'searchCorrect']);
+
+// 게시글 연관 태그 검색
+Route::get('/posts/search/tag/{tag}',[PostsController::class, 'relatedPostTags']); 
