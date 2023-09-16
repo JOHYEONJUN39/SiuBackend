@@ -6,55 +6,56 @@ use App\Helpers\ImageHelper;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
-    //아이디 중복 검사 API
-    public function store(Request $request) {
-        $request->validate([
-            'id' => 'required',
-            'password' => 'required',
-        ]);
-
-        // when user registered, default nickname is userId
-        User::create([
-            'id' => $request->id,
-            'nickname' => $request->id,
-            'password' => $request->password,
-            'profile_image' => env('DEFAULT_PROFILE_IMAGE_PATH'),
-        ]);
-        return response()->json(['message' => 'User add successfully'], 201);        
+    public function __construct(protected ImageHelper $imageHelper) {
     }
-
+    /** 現在ユーザー */
+    public function index(Request $request) {
+        return $request->user();
+    }
+    /** 特定ユーザー */
     public function show($id) {
         $userData = User::where('id', $id)->firstOrFail();
         return $userData;
     }
 
+    /** アップデート */
     public function update(Request $request) {
-        $request->validate([
-            'id' => 'required',
-        ]);
-
-        // 개선 필요
-        if(isset($request->nickname)) {
-            User::where('id', $request->id)->update(['nickname' => $request->nickname]);
+        try {
+            $request->validate([
+                'id' => 'required',
+                'nickname' => 'filled',
+                'password' => 'filled', 
+                'profileImage' => 'filled',
+            ]);
+        } catch(ValidationException $e) {
+            $errMsg = $e->errors();
+            $status = $e->status;
+            return response()->json(['error' => $errMsg], $status);
         }
-
-        if(isset($request->password)) {
-            User::where('id', $request->id)->update(['password' => Hash::make($request->password)]);
-        }
-
-        /** store user profile image */
-        if(isset($request->profileImage)) {
-            $imageHelper = new ImageHelper();
-            $path = $imageHelper->storeProfileImage($request->profileImage, $request->id);
-            User::where('id', $request->id)->update(['profile_image' => $path]);
+        // userId
+        $userId = $request->id;
+        // update
+        switch(true) {
+            // update Nickname
+            case isset($request->nickname) :
+            User::where('id', $userId)->update(['nickname' => $request->nickname]);
+            // update Password
+            case isset($request->password) : 
+                User::where('id', $userId)->update(['password' => Hash::make($request->password)]);
+            // update ProfileImage
+            case isset($request->profileImage) :
+                $path = $this->imageHelper->storeProfileImage($request->profileImage, $userId);
+                User::where('id', $userId)->update(['profile_image' => $path]);
+                break;
         }
 
         return response()->json(['message' => 'User updated successfully'], 200);
     }
-
+    /** ユーザー削除 */
     public function destroy($id) {
         User::destroy($id);
         return response()->json(['message' => 'User deleted successfully'] ,200);
