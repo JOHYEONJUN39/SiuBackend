@@ -221,12 +221,9 @@ class PostsController extends Controller
                      ->with('tags') // 'tags' 관계 로드
                      ->get();
 
-        $tags = $posts->map(function ($post) {
-            return $post->tags->pluck('tag_name');
-        })->flatten();
-
+        
         $data = [
-            'posts' => $posts->map(function($post) {
+            'posts' => $posts->map(function ($post) {
                 return [
                     'id' => $post->id,
                     'title' => $post->title,
@@ -235,10 +232,10 @@ class PostsController extends Controller
                     'user_id' => $post->user_id,
                     'created_at' => $post->created_at,
                     'updated_at' => $post->updated_at,
-                ];
-            }),
-            'tag_name' => $tags
-        ];
+                    'tag_name' => $post->tags->pluck('tag_name'),
+                    ];
+                })
+            ];             
         
 
         return response()->json([$data]);
