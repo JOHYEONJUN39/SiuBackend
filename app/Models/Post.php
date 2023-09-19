@@ -22,4 +22,10 @@ class Post extends Model
     {
         return $this->belongsToMany(Tag::class, 'post_tags', 'post_id', 'tag_id');
     }
+
+    // Post 모델과 PostImage 모델 간의 일대다 관계 정의
+    public function images()
+    {
+        return $this->hasMany(PostImage::class, 'post_id');
+    }
 }

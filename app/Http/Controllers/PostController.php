@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\Tag;
-use App\Models\Posttag;
-use Illuminate\Database\Eloquent\Relations\Pivot;
+use App\Helpers\ImageHelper;
+use App\Models\PostImage;
+use Illuminate\Support\Facades\Storage;
 
-class PostsController extends Controller
+class PostController extends Controller
 {
+    public function __construct(protected ImageHelper $imageHelper) {
+    }
     // 게시글 등록
     public function createPost(Request $request)
     {
@@ -38,6 +42,21 @@ class PostsController extends Controller
         $post->tags()->sync($tags);
 
         return response()->json($post);
+    }
+
+    // 이미지 AWS (S3)에 저장
+    public function createImage(Request $request) {
+        $request->validate([
+            'postImage' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+        
+        $extension = $request->postImage->getClientOriginalExtension(); // JPG,PNG 등 파일 확장자명을 들고 옴
+        $imageName = time().'.'.$extension;
+        // 이미지를 AWS 에 저장하고 imagePath를 반환
+        $path = $this->imageHelper->storePostImage($request->postImage, $imageName);
+        // $path = Storage::disk('s3')->put('/profile-image', $request->postImage);
+        // dd($path);
+        return response()->json(['image_path' => $path]);
     }
 
     // 게시글 삭제
@@ -74,6 +93,7 @@ class PostsController extends Controller
     public function retrievePostId($id){
         // 요청된 ID에 해당하는 게시글 탐색
         $post = Post::find($id);
+        $postImage = PostImage::where('post_id',$id)->get();
 
         if (!$post) {
             // 게시글이 존재하지 않을 경우 404 에러 반환 또는 다른 처리
@@ -85,8 +105,13 @@ class PostsController extends Controller
         $post->view++;
         $post->save();
 
+        $data = [
+            $post,
+            $postImage,
+        ];
+
         // 응답을 Json으로 생성
-        return response()->json(['post' => $post]);
+        return response()->json($data);
     }
 
     // 특정 태그로 조회
@@ -246,15 +271,7 @@ class PostsController extends Controller
 
         // 태그와 연관된 게시물을 가져옴
         $posts = Tag::where('tag_name', 'like', "$tag%")->get();
-
-        $data = [
-            'posts' => $posts->map(function($post) {
-                return [
-                    'tag_name' => $post->tag_name,
-                ];
-            }),
-        ];
         
-        return response()->json([$data]);
+        return response()->json(['tags' => $posts->map(function($post) {return $post->tag_name;})]);
     }
 }
