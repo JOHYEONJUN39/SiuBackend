@@ -22,12 +22,15 @@ class RegisterController extends Controller
         }
 
         // when user registered, default nickname is userId
-        User::create([
+        $user = User::create([
             'id' => $validated['id'],
             'nickname' => $validated['id'],
             'password' => $validated['password'],
             'profile_image' => env('DEFAULT_PROFILE_IMAGE_PATH'),
         ]);
+        if(!$user) {
+            return response()->json(['error' => 'Falied to add user'], 500);
+        }
         return response()->json(['message' => 'User add successfully'], 201);     
     }
 }

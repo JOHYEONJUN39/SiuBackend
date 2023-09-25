@@ -9,9 +9,9 @@ class LogoutController extends Controller
 {
     
     public function __invoke(Request $request) {
-        // 왜 sanctum 가드가 아니라 web을 사용하는거지
-        Auth::guard('web')->logout();
+        Auth::logout();
         $request->session()->invalidate();
+        $request->session()->regenerateToken();
         return response()->json(['message' => 'logged out successfully']);
     }
 }

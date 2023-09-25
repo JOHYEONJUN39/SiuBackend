@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ImageHelper;
+use App\Helpers\params;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -18,8 +20,12 @@ class UserController extends Controller
     }
     /** 特定ユーザー */
     public function show($id) {
-        $userData = User::where('id', $id)->firstOrFail();
-        return $userData;
+        try {
+            User::where('id', $id)->firstOrFail();
+        } catch(ModelNotFoundException $e) {
+            $errMsg = $e->getMessage();
+            return response()->json(['error' => $errMsg], 500);
+        }
     }
 
     /** アップデート */
@@ -39,16 +45,26 @@ class UserController extends Controller
         // userId
         $userId = $request->id;
         // update
+        // 예 외 처 리 추 가 해 야 함
         switch(true) {
             // update Nickname
             case isset($request->nickname) :
-            User::where('id', $userId)->update(['nickname' => $request->nickname]);
+                $nickname = User::where('id', $userId)->update(['nickname' => $request->nickname]);
+                if(!$nickname) {
+                    return response()->json(['error' => 'Failed to update nickname'], 500);
+                }
             // update Password
             case isset($request->password) : 
-                User::where('id', $userId)->update(['password' => Hash::make($request->password)]);
+                $password = User::where('id', $userId)->update(['password' => Hash::make($request->password)]);
+                if(!$password) {
+                    return response()->json(['error' => 'Failed to update password'], 500);
+                }
             // update ProfileImage
             case isset($request->profileImage) :
-                $path = $this->imageHelper->storeProfileImage($request->profileImage, $userId);
+                $path = $this->imageHelper->storeImage($request->profileImage, $userId, params::profile);
+                if(!$path) {
+                    return response()->json(['error' => 'Failed to save image'], 500);
+                }
                 User::where('id', $userId)->update(['profile_image' => $path]);
                 break;
         }
@@ -57,7 +73,12 @@ class UserController extends Controller
     }
     /** ユーザー削除 */
     public function destroy($id) {
-        User::destroy($id);
-        return response()->json(['message' => 'User deleted successfully'] ,200);
+        $user = User::find($id);
+        $destroy = User::destroy($id);
+        if($destroy) {
+            $this->imageHelper->destroyImage($user->profile_image, params::profile);
+            return response()->json(['message' => 'User deleted successfully'], 200);
+        }
+        return response()->json(['error' => 'Failed to delete User'], 500);
     }
 }
