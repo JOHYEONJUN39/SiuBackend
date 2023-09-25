@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ImageHelper;
+use App\Helpers\params;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -60,7 +61,7 @@ class UserController extends Controller
                 }
             // update ProfileImage
             case isset($request->profileImage) :
-                $path = $this->imageHelper->storeProfileImage($request->profileImage, $userId);
+                $path = $this->imageHelper->storeImage($request->profileImage, $userId, params::profile);
                 if(!$path) {
                     return response()->json(['error' => 'Failed to save image'], 500);
                 }
@@ -72,10 +73,12 @@ class UserController extends Controller
     }
     /** ユーザー削除 */
     public function destroy($id) {
-        $user = User::destroy($id);
-        if(!$user) {
-            return response()->json(['error' => 'Failed to delete User'], 500);
+        $user = User::find($id);
+        $destroy = User::destroy($id);
+        if($destroy) {
+            $this->imageHelper->destroyImage($user->profile_image, params::profile);
+            return response()->json(['message' => 'User deleted successfully'], 200);
         }
-        return response()->json(['message' => 'User deleted successfully'] ,200);
+        return response()->json(['error' => 'Failed to delete User'], 500);
     }
 }
