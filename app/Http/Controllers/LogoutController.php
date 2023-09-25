@@ -11,6 +11,7 @@ class LogoutController extends Controller
     public function __invoke(Request $request) {
         Auth::logout();
         $request->session()->invalidate();
+        $request->session()->regenerateToken();
         return response()->json(['message' => 'logged out successfully']);
     }
 }
