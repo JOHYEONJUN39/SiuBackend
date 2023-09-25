@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\SignoutController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LogoutController;
@@ -25,6 +26,8 @@ use App\Http\Controllers\PostController;
     Route::patch('/user', [UserController::class, 'update']);
     /** User Logout */
     Route::post('/logout', LogoutController::class);
+
+    Route::post('/signout', SignoutController::class);
 // });
 /** User Login */
 Route::post('/login', LoginController::class);
