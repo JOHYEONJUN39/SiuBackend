@@ -11,6 +11,7 @@ use App\Helpers\ImageHelper;
 use App\Models\PostImage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use App\Helpers\params;
 
 class PostController extends Controller
 {
@@ -52,13 +53,15 @@ class PostController extends Controller
             'postImage' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
         
-        $extension = $request->postImage->getClientOriginalExtension(); // JPG,PNG 등 파일 확장자명을 들고 옴
-        $imageName = time().'.'.$extension;
+        $imageName = time();
         // 이미지를 AWS 에 저장하고 imagePath를 반환
-        $path = $this->imageHelper->storePostImage($request->postImage, $imageName);
-        // $path = Storage::disk('s3')->put('/profile-image', $request->postImage);
-        // dd($path);
+        $path = $this->imageHelper->storeImage($request->postImage, $imageName, params::post);
         return response()->json(['image_path' => $path]);
+    }
+
+    // 이미지 삭제
+    public function deleteImage() {
+       return $this->imageHelper->destoryImage('1695631363.jpg', params::post);
     }
 
     // 게시글 삭제
