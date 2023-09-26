@@ -45,41 +45,32 @@ class UserController extends Controller
         // userId
         $userId = $request->id;
         // update
-        // 예 외 처 리 추 가 해 야 함
-        switch(true) {
+        // 예 외 처 리 추 가 해 야 함   
             // update Nickname
-            case isset($request->nickname) :
+            if (isset($request->nickname)) {
                 $nickname = User::where('id', $userId)->update(['nickname' => $request->nickname]);
                 if(!$nickname) {
                     return response()->json(['error' => 'Failed to update nickname'], 500);
                 }
+            }   
             // update Password
-            case isset($request->password) : 
+            if (isset($request->password)) {
                 $password = User::where('id', $userId)->update(['password' => Hash::make($request->password)]);
                 if(!$password) {
                     return response()->json(['error' => 'Failed to update password'], 500);
                 }
+            }
             // update ProfileImage
-            case isset($request->profileImage) :
+            if (isset($request->profileImage)) {
                 $path = $this->imageHelper->storeImage($request->profileImage, $userId, params::profile);
                 if(!$path) {
                     return response()->json(['error' => 'Failed to save image'], 500);
                 }
-                User::where('id', $userId)->update(['profile_image' => $path]);
-                break;
-        }
-
+                $profileImage = User::where('id', $userId)->update(['profile_image' => $path]);
+                if(!$profileImage) {
+                    return response()->json(['error' => 'Failed to update profile image']);
+                }
+            }
         return response()->json(['message' => 'User updated successfully'], 200);
     }
-    /** ユーザー削除 */
-    public function destroy($id) {
-        $user = User::find($id);
-        if($user) {
-            $this->imageHelper->destroyImage($user->profile_image);
-            // 이미지 저장 실패 시 어떻게 처리하지
-            $user->delete();
-            return response()->json(['message' => 'User deleted successfully'], 200);
-        }
-        return response()->json(['error' => 'Failed to delete User'], 500);
-    }   
 }

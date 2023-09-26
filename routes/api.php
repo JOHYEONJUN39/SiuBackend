@@ -1,12 +1,10 @@
 <?php
 
-use App\Helpers\ImageHelper;
-use App\Http\Controllers\SignoutController;
+use App\Http\Controllers\UnregisterController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\RegisterController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 /*
@@ -22,12 +20,12 @@ use App\Http\Controllers\PostController;
 
 // Route::middleware('auth:sanctum')->group(function() {
     Route::resource('user', UserController::class)->only([
-        'index', 'show', 'destroy'
+        'index', 'show'
     ]);
     Route::patch('/user', [UserController::class, 'update']);
     /** User Logout */
     Route::post('/logout', LogoutController::class);
-
+    Route::post('/unregister', UnregisterController::class);
 // });
 /** User Login */
 Route::post('/login', LoginController::class);
