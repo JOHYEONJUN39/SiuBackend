@@ -74,11 +74,12 @@ class UserController extends Controller
     /** ユーザー削除 */
     public function destroy($id) {
         $user = User::find($id);
-        $destroy = User::destroy($id);
-        if($destroy) {
-            $this->imageHelper->destroyImage($user->profile_image, params::profile);
+        if($user) {
+            $this->imageHelper->destroyImage($user->profile_image);
+            // 이미지 저장 실패 시 어떻게 처리하지
+            $user->delete();
             return response()->json(['message' => 'User deleted successfully'], 200);
         }
         return response()->json(['error' => 'Failed to delete User'], 500);
-    }
+    }   
 }
