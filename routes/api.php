@@ -1,5 +1,6 @@
 <?php
 
+use App\Helpers\ImageHelper;
 use App\Http\Controllers\SignoutController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LoginController;
@@ -27,7 +28,6 @@ use App\Http\Controllers\PostController;
     /** User Logout */
     Route::post('/logout', LogoutController::class);
 
-    Route::post('/signout', SignoutController::class);
 // });
 /** User Login */
 Route::post('/login', LoginController::class);
