@@ -24,7 +24,7 @@ class LoginController extends Controller
             $status = $e->status;
             return response()->json(['error' => $errMsg], $status);
         }
-        
+        // 주어진 ID를 통해 유저검색, password hashing 을 통해 비밀번호 비교 후 인증
         if(Auth::attempt([
             'id' => $credentials['id'], 
             'password' => $credentials['password']
