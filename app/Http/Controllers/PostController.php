@@ -60,7 +60,7 @@ class PostController extends Controller
         $path = $this->imageHelper->storeImage($image, 'YDH', params::post);
         return response()->json(['image_path' => $path]);
     }
-    
+
     // 이미지 삭제
     public function deleteImage() {
        return $this->imageHelper->destroyImage('1695631363.jpg');
@@ -170,6 +170,7 @@ class PostController extends Controller
             'label' => 'Next &raquo;',
             'active' => $searchTag->hasMorePages(),
         ];
+        
         
         return response()->json($searchTag);
     }
