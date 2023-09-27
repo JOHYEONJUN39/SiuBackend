@@ -63,4 +63,7 @@ Route::get('/posts/search/{titleArticle}/correct',[PostController::class, 'searc
 Route::get('/posts/search/tag/{tag}',[PostController::class, 'relatedPostTags']); 
 
 // 게시글 이미지 AWS(S3) 저장 및 path 반환
-Route::post('/posts/image',[PostController::class,'createImage']);
+Route::post('/posts/storeImage',[PostController::class,'createImage']);
+
+// 이미지 삭제
+Route::post('/posts/deleteImage',[PostController::class,'deleteImage']);

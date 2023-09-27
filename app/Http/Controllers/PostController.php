@@ -11,10 +11,12 @@ use App\Helpers\ImageHelper;
 use App\Models\PostImage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use App\Helpers\params;
 
 class PostController extends Controller
 {
     public function __construct(protected ImageHelper $imageHelper) {
+
     }
     // 게시글 등록
     public function createPost(Request $request)
@@ -24,7 +26,6 @@ class PostController extends Controller
             "title" => "string",
             "article" => "string",
             "tags" => "array",  // array형으로 받음
-            "view" => "integer",
         ]);
 
         // Posts 테이블에 저장할 데이터
@@ -49,16 +50,26 @@ class PostController extends Controller
     // 이미지 AWS (S3)에 저장
     public function createImage(Request $request) {
         $request->validate([
-            'postImage' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
         
-        $extension = $request->postImage->getClientOriginalExtension(); // JPG,PNG 등 파일 확장자명을 들고 옴
-        $imageName = time().'.'.$extension;
+        $imageName = time();
+        $image = $request->image;
         // 이미지를 AWS 에 저장하고 imagePath를 반환
-        $path = $this->imageHelper->storePostImage($request->postImage, $imageName);
-        // $path = Storage::disk('s3')->put('/profile-image', $request->postImage);
-        // dd($path);
+        $path = $this->imageHelper->storeImage($image, 'YDH', params::post);
         return response()->json(['image_path' => $path]);
+    }
+    
+
+    // public function createImage(Request $request) {
+    //     $image = $request->file('image');
+    //     $path = $this->imageHelper->storeImage($image, 'YDH', params::post);
+    //     return response()->json(['image_path' => $path]);
+    // }
+
+    // 이미지 삭제
+    public function deleteImage() {
+       return $this->imageHelper->destroyImage('1695631363.jpg');
     }
 
     // 게시글 삭제
@@ -145,7 +156,7 @@ class PostController extends Controller
         ->select('post_id', 'title', 'article', 'view', 'user_id', 'posts.created_at', 'posts.updated_at', DB::raw('GROUP_CONCAT(tag_name) as tag_names'))
         ->groupBy('post_id')
         ->havingRaw('GROUP_CONCAT(tag_name) LIKE ?', ["%$tagName%"])
-        ->get();
+        ->paginate(10);
 
         // 문자열에서 "[\]" 제거
         $searchTag = $searchTag->map(function ($item) {
@@ -165,14 +176,14 @@ class PostController extends Controller
 
     // 조회수 순 정렬 조회
     public function retrievePostView(){
-        $posts = Post::orderBy('view','desc')->get();
+        $posts = Post::orderBy('view','desc')->paginate(10);
 
         return response()->json($posts);
     }
 
     // 최근 순 정렬 조회
     public function retrieveRecentPost(){
-        $posts = Post::orderBy('created_at','desc')->get();
+        $posts = Post::orderBy('created_at','desc')->paginate(10);
 
         return response()->json($posts);
     }
@@ -245,17 +256,8 @@ class PostController extends Controller
     public function search($search){
         $posts = Post::where('title', 'like', "$search%")
                      ->orWhere('article', 'like', "$search%")
-                     ->get();
-
-        return response()->json($posts);
-    }
-
-    // 제목+내용 일치 검색
-    public function searchCorrect($search){
-        $posts = Post::where('title', 'like', "$search")
-                     ->orWhere('article', 'like', "$search")
                      ->with('tags') // 'tags' 관계 로드
-                     ->get();
+                     ->paginate(10);
 
         
         $data = $posts->map(function ($post) {
@@ -280,7 +282,9 @@ class PostController extends Controller
     public function relatedPostTags($tag){
 
         // 태그와 연관된 게시물을 가져옴
-        $posts = Tag::where('tag_name', 'like', "$tag%")->get();
+        $posts = Tag::where('tag_name', 'like', "$tag%")->simplePaginate(10);
+        
+        // 게시글과 연결된 태그가 많은 순서대로 들고옴?
         
         return response()->json(['tags' => $posts->map(function($post) {return $post->tag_name;})]);
     }
