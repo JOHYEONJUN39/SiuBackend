@@ -12,6 +12,7 @@ use App\Models\PostImage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\params;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PostController extends Controller
 {
@@ -146,9 +147,6 @@ class PostController extends Controller
             return response()->json(['message' => '태그를 찾을 수 없습니다.'], 404);
         }
 
-        // 해당 태그와 연결된 게시글을 가져옴
-        $posts = $tag->posts;
-
         // 게시물이 가지고 있는 태그를 한번에 보여주기 위한 join
         $searchTag = DB::table('posts')
         ->join('post_tags', 'posts.id', '=', 'post_tags.post_id')
@@ -156,22 +154,31 @@ class PostController extends Controller
         ->select('post_id', 'title', 'article', 'view', 'user_id', 'posts.created_at', 'posts.updated_at', DB::raw('GROUP_CONCAT(tag_name) as tag_names'))
         ->groupBy('post_id')
         ->havingRaw('GROUP_CONCAT(tag_name) LIKE ?', ["%$tagName%"])
-        ->paginate(10);
+        ->paginate(2);
 
-        // 문자열에서 "[\]" 제거
-        $searchTag = $searchTag->map(function ($item) {
-            $tagNames = explode(',', $item->tag_names);
-            $tagNames = array_map(function ($tagName) {
-                return trim($tagName, '" ');
-            }, $tagNames);
-            $item->tag_names = $tagNames;
-            return $item;
-        });
-
+        $paginationLinks = [
+            [
+                'url' => null,
+                'label' => '&laquo; Previous',
+                'active' => false,
+            ],
+        ];
         
-
+        for ($i = 1; $i <= $searchTag->lastPage(); $i++) {
+            $paginationLinks[] = [
+                'url' => $searchTag->url($i),
+                'label' => (string)$i,
+                'active' => $searchTag->currentPage() === $i,
+            ];
+        }
+    
+        $paginationLinks[] = [
+            'url' => $searchTag->nextPageUrl(),
+            'label' => 'Next &raquo;',
+            'active' => $searchTag->hasMorePages(),
+        ];
+        
         return response()->json($searchTag);
-        // 태그 이름값도 보내 주어야 함
     }
 
     // 조회수 순 정렬 조회
@@ -261,21 +268,60 @@ class PostController extends Controller
 
         
         $data = $posts->map(function ($post) {
-                    return [
-                        'id' => $post->id,
-                        'title' => $post->title,
-                        'article' => $post->article,
-                        'view' => $post->view,
-                        'user_id' => $post->user_id,
-                        'created_at' => $post->created_at,
-                        'updated_at' => $post->updated_at,
-                        'tag_name' => $post->tags->pluck('tag_name'),
-                        ];
-                    });
-                         
+            return [
+                'id' => $post->id,
+                'title' => $post->title,
+                'article' => $post->article,
+                'view' => $post->view,
+                'user_id' => $post->user_id,
+                'created_at' => $post->created_at,
+                'updated_at' => $post->updated_at,
+                'tag_name' => $post->tags->pluck('tag_name'),
+                ];
+            });
+                    
+        $paginationLinks = [
+            [
+                'url' => null,
+                'label' => '&laquo; Previous',
+                'active' => false,
+            ],
+        ];
+    
+        for ($i = 1; $i <= $posts->lastPage(); $i++) {
+            $paginationLinks[] = [
+                'url' => $posts->url($i),
+                'label' => (string)$i,
+                'active' => $posts->currentPage() === $i,
+            ];
+        }
+    
+        $paginationLinks[] = [
+            'url' => $posts->nextPageUrl(),
+            'label' => 'Next &raquo;',
+            'active' => $posts->hasMorePages(),
+        ];
         
+        // 전체 게시글 수가 페이지네이션 할 게시글 수 보다 작을 때
+        if($posts->total() < $posts->perPage()){
+            return response()->json($data);
+        }
 
-        return response()->json($data);
+        return response()->json([
+            'current_page' => $posts->currentPage(),
+            'data' => $data,
+            'first_page_url' => $posts->url(1),
+            'from' => $posts->firstItem(),
+            'last_page' => $posts->lastPage(),
+            'last_page_url' => $posts->url($posts->lastPage()),
+            'links' => $paginationLinks,
+            'next_page_url' => $posts->nextPageUrl(),
+            'path' => $posts->path(),
+            'per_page' => $posts->perPage(),
+            'prev_page_url' => $posts->previousPageUrl(),
+            'to' => $posts->lastItem(),
+            'total' => $posts->total(),
+        ]);
     }
 
     // 연관 태그 검색
@@ -284,8 +330,72 @@ class PostController extends Controller
         // 태그와 연관된 게시물을 가져옴
         $posts = Tag::where('tag_name', 'like', "$tag%")->simplePaginate(10);
         
-        // 게시글과 연결된 태그가 많은 순서대로 들고옴?
-        
         return response()->json(['tags' => $posts->map(function($post) {return $post->tag_name;})]);
     }
+
+    // 유저 아이디로 게시글 검색
+    public function userPosts($userId) {
+
+        // 해당 유저의 게시글을 가져옴
+        $posts = Post::where('user_id', 'like', "$userId")
+                     ->with('tags') // 'tags' 관계 로드
+                     ->paginate(10);
+
+        
+        $data = $posts->map(function ($post) {
+            return [
+                'id' => $post->id,
+                'title' => $post->title,
+                'article' => $post->article,
+                'view' => $post->view,
+                'user_id' => $post->user_id,
+                'created_at' => $post->created_at,
+                'updated_at' => $post->updated_at,
+                'tag_name' => $post->tags->pluck('tag_name'),
+                ];
+        });
+
+        $paginationLinks = [
+            [
+                'url' => null,
+                'label' => '&laquo; Previous',
+                'active' => false,
+            ],
+        ];
+    
+        for ($i = 1; $i <= $posts->lastPage(); $i++) {
+            $paginationLinks[] = [
+                'url' => $posts->url($i),
+                'label' => (string)$i,
+                'active' => $posts->currentPage() === $i,
+            ];
+        }
+    
+        $paginationLinks[] = [
+            'url' => $posts->nextPageUrl(),
+            'label' => 'Next &raquo;',
+            'active' => $posts->hasMorePages(),
+        ];
+    
+        // 전체 게시글 수가 페이지네이션 할 게시글 수 보다 작을 때
+        if($posts->total() < $posts->perPage()){
+            return response()->json($data);
+        }
+
+        return response()->json([
+            'current_page' => $posts->currentPage(),
+            'data' => $data,
+            'first_page_url' => $posts->url(1),
+            'from' => $posts->firstItem(),
+            'last_page' => $posts->lastPage(),
+            'last_page_url' => $posts->url($posts->lastPage()),
+            'links' => $paginationLinks,
+            'next_page_url' => $posts->nextPageUrl(),
+            'path' => $posts->path(),
+            'per_page' => $posts->perPage(),
+            'prev_page_url' => $posts->previousPageUrl(),
+            'to' => $posts->lastItem(),
+            'total' => $posts->total(),
+        ]);
+    } 
 }
