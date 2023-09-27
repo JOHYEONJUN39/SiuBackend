@@ -19,7 +19,7 @@ class UnregisterController extends Controller
         $user = User::find($userId);
         if($user) {
             $this->imageHelper->destroyImage($user->profile_image);
-            // 이미지 저장 실패 시 어떻게 처리하지
+            // 이미지 삭제 실패 시 어떻게 처리하지
             $user->delete(); 
             $this->logoutController->__invoke($request);
             return response()->json(['message' => 'Unregister successfully']);

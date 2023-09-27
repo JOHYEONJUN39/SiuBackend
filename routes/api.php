@@ -31,6 +31,10 @@ use App\Http\Controllers\PostController;
 Route::post('/login', LoginController::class);
 /** User Register */
 Route::post('/register', RegisterController::class);
+/** Store user profile image for preview */
+Route::post('/preview', [UserController::class, 'storePreviewImage']);
+/** Delete user profile image for preview */
+Route::delete('/preview', [UserController::class, 'destroyPreviewImage']);
 
 
 /* 게시글 작성 post 요청 받을 시 */
