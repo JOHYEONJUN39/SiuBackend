@@ -61,13 +61,6 @@ class PostController extends Controller
         return response()->json(['image_path' => $path]);
     }
     
-
-    // public function createImage(Request $request) {
-    //     $image = $request->file('image');
-    //     $path = $this->imageHelper->storeImage($image, 'YDH', params::post);
-    //     return response()->json(['image_path' => $path]);
-    // }
-
     // 이미지 삭제
     public function deleteImage() {
        return $this->imageHelper->destroyImage('1695631363.jpg');
