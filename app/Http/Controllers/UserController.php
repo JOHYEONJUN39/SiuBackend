@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Helpers\ImageHelper;
 use App\Helpers\params;
 use App\Models\User;
-use Illuminate\Auth\Events\Validated;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -83,7 +82,9 @@ class UserController extends Controller
             $status = $e->status;
             return response()->json(['error' => $errMsg], $status);
         }
-        list($userId, $profileImage) = $request;
+        $userId = $request->id;
+        $profileImage = $request->profile_image;
+
         $path = $this->imageHelper->storeImage($profileImage, $userId, params::profile);
         if($path) {
             return response()->json(['profile_image' => $path]);
