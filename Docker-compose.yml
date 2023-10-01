@@ -1,0 +1,22 @@
+version: '3'
+services:
+  proxy:
+    container_name: nginx_proxy
+    image: nginx:latest
+    ports: 
+      - "80:80"
+    volumes:
+      - ${PWD}/proxy/nginx.conf:/etc/nginx/nginx.conf
+  web:
+    container_name: nginx_web_server
+    image: nginx:latest
+    expose:
+      - "8080"
+    volumes:
+      - ${PWD}/source:/source
+      - ${PWD}/nginx/default.conf:/etc/nginx/conf.d/default.conf
+  php:
+    build:
+        context: .
+    volumes:
+      - ${PWD}/source:/source
