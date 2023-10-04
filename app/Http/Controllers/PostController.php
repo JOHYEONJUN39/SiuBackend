@@ -79,9 +79,30 @@ class PostController extends Controller
         // 게시글과 엮인 태그 확인 및 해당 태그들을 가진 게시물이 없을 시 삭제
         $tags = $post->tags;
 
+        // 게시글 내용에서 img 태그 안에있는 img 땡겨 오기
+        $article = $post->article;
+        // return $article;
+
+        $pattern = '/src="([^"]+)"/';
+
+        preg_match_all($pattern, $article, $matches);
+
+        // 일치하는 부분이 있다면, 그 다음에 오는 문자열을 $result에 저장합니다.
+        if (isset($matches[1])) {
+            $result = $matches[1];
+        } else {
+            // 일치하는 부분이 없을 경우, 빈 문자열이나 다른 처리를 수행할 수 있습니다.
+            $result = 'No match found';
+        }
+
+        foreach($result as $img) {    
+            $this->imageHelper->destroyImage($img);
+        }
+
         // 게시글 삭제
         $post->delete();
 
+        
         // 태그 중 post_tags 테이블에 사용 되지 않는 태그 삭제
         foreach($tags as $tag) {
             if(!$tag->posts()->exists()) {
