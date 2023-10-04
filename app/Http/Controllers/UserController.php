@@ -22,11 +22,13 @@ class UserController extends Controller
     /** 特定ユーザー */
     public function show($id) {
         try {
-            User::where('id', $id)->firstOrFail();
+            $user = User::where('id', $id)->firstOrFail();
         } catch(ModelNotFoundException $e) {
             $errMsg = $e->getMessage();
             return response()->json(['error' => $errMsg], 500);
         }
+
+        return response()->json($user);
     }
 
     /** アップデート */
