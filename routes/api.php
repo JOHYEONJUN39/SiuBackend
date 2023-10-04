@@ -72,8 +72,4 @@ Route::get('/posts/users/{userId}',[PostController::class, 'userPosts']);
 // 게시글 이미지 AWS(S3) 저장 및 path 반환
 Route::post('/posts/storeImage',[PostController::class,'createImage']);
 
-// 이미지 삭제
-Route::post('/posts/deleteImage',[PostController::class,'deleteImage']);
-// 현재 게시글 이미지 저장 path반환 삭제는 테스트가 안되었음
-// 이미지 삭제 로직은 여기가 아니라 추후 삭제 확인 될 경우 게시글 삭제와 합칠 예정
 
