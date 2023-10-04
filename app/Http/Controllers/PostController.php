@@ -94,7 +94,7 @@ class PostController extends Controller
             // 일치하는 부분이 없을 경우, 빈 문자열이나 다른 처리를 수행할 수 있습니다.
             $result = 'No match found';
         }
-        
+
         foreach($result as $img) {    
             $this->imageHelper->destroyImage($img);
         }
@@ -102,6 +102,7 @@ class PostController extends Controller
         // 게시글 삭제
         $post->delete();
 
+        
         // 태그 중 post_tags 테이블에 사용 되지 않는 태그 삭제
         foreach($tags as $tag) {
             if(!$tag->posts()->exists()) {
