@@ -28,6 +28,7 @@ class CommentController extends Controller
             return response()->json(['error' => '등록에 실패했습니다.', 'message' => $e->getMessage()],500);
         }
     }
+
     
     // comment 수정
     public function updateComment(Request $request){

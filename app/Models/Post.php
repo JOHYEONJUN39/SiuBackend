@@ -38,7 +38,7 @@ class Post extends Model
     // user 모델과 post 모델의 일대다 관계 정의
     public function user()
     {
-        return $this->belongTo(User::class);
+        return $this->belongsTo(User::class);
     }
 
 }

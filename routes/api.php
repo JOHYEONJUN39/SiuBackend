@@ -74,6 +74,9 @@ Route::get('/posts/users/{userId}',[PostController::class, 'userPosts']);
 Route::post('/posts/storeImage',[PostController::class,'createImage']);
 
 // 댓글 기능
+
+// 댓글 게시
 Route::post('/posts/{postId}/comment/createComment',[CommentController::Class, 'createComment']);
+
 
 

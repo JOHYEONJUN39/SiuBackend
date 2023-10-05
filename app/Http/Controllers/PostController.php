@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
+use App\Models\Comment;
 use App\Helpers\ImageHelper;
 use App\Models\PostImage;
 use Illuminate\Support\Facades\Storage;
@@ -126,6 +127,11 @@ class PostController extends Controller
             // 게시글이 존재하지 않을 경우 404 에러 반환 또는 다른 처리
             return response()->json(['message' => '게시글을 찾을 수 없습니다.'], 404);
         }
+
+        // 조회수 증가
+        $post->view++;
+        $post->save();
+
         // 사용자 정보 넘겨주기
         $userId = $post->user_id;
         $userData = User::find($userId);
@@ -141,13 +147,12 @@ class PostController extends Controller
             'updated_at'
         );
         $tags = $tagList->pluck('tag_name');
-            
-        // 조회수 증가
-        $post->view++;
-        $post->save();
+
+        // 댓글 가져오기
+        $commentData = Comment::where('post_id',$id)->get();
 
         // 응답을 Json으로 생성
-        return response()->json(["post" => $postData, "user" => $userData, "tags" => $tags]);
+        return response()->json(["post" => $postData, "user" => $userData, "tags" => $tags, "comments" => $commentData]);
     } 
 
     // 특정 태그로 조회
@@ -160,52 +165,26 @@ class PostController extends Controller
         if(!$tag){
             return response()->json(['message' => '태그를 찾을 수 없습니다.'], 404);
         }
+        
+        $result = Post::with(['tags', 'user', 'comments'])
+        ->whereHas('tags', function ($query) use ($tagName) {
+            $query->where('tag_name', $tagName);
+        })
+        ->get();
 
-        // 게시물이 가지고 있는 태그를 한번에 보여주기 위한 join
-        $searchTag = DB::table('posts')
-        ->join('post_tags', 'posts.id', '=', 'post_tags.post_id')
-        ->join('tags', 'post_tags.tag_id', '=', 'tags.id')
-        ->select('post_id', 'title', 'article', 'view', 'user_id', 'posts.created_at', 'posts.updated_at', DB::raw('GROUP_CONCAT(tag_name) as tag_names'))
-        ->groupBy('post_id')
-        ->havingRaw('GROUP_CONCAT(tag_name) LIKE ?', ["%$tagName%"])
-        ->paginate(2);
-
-        $paginationLinks = [
-            [
-                'url' => null,
-                'label' => '&laquo; Previous',
-                'active' => false,
-            ],
-        ];
-        
-        for ($i = 1; $i <= $searchTag->lastPage(); $i++) {
-            $paginationLinks[] = [
-                'url' => $searchTag->url($i),
-                'label' => (string)$i,
-                'active' => $searchTag->currentPage() === $i,
-            ];
-        }
-    
-        $paginationLinks[] = [
-            'url' => $searchTag->nextPageUrl(),
-            'label' => 'Next &raquo;',
-            'active' => $searchTag->hasMorePages(),
-        ];
-        
-        
-        return response()->json($searchTag);
+        return response()->json($result);
     }
 
     // 조회수 순 정렬 조회
     public function retrievePostView(){
-        $posts = Post::orderBy('view','desc')->paginate(10);
+        $posts = Post::with(['tags', 'user', 'comments'])->orderBy('view','desc')->paginate(10);
 
         return response()->json($posts);
     }
 
     // 최근 순 정렬 조회
     public function retrieveRecentPost(){
-        $posts = Post::orderBy('created_at','desc')->paginate(10);
+        $posts = Post::with(['tags', 'user', 'comments'])->orderBy('created_at','desc')->paginate(10);
 
         return response()->json($posts);
     }
@@ -226,7 +205,6 @@ class PostController extends Controller
 
         // 원래 게시글의 태그 확인
         // pluck 함수는 DB 결과 집합에서 원하는 컬럼의 값을 추출하는데 사용됨
-        // $oldTags = $post->tags->pluck('tag_name')->toArray();
 
         $existingTagIds = $post->tags->pluck('id')->toArray();
         // 새로운 태그 목록으로 부터 태그 Id를 가져옴
@@ -276,67 +254,11 @@ class PostController extends Controller
     /* 게시글 검색 */
     // 제목+내용 연관어 검색
     public function search($search){
-        $posts = Post::where('title', 'like', "$search%")
-                     ->orWhere('article', 'like', "$search%")
-                     ->with('tags') // 'tags' 관계 로드
-                     ->paginate(10);
-
+        $posts = Post::with(['tags','user','comments'])->where('title','like',"$search%")
+                 ->orWhere('article','like',"$search%")
+                 ->paginate(10);
         
-        $data = $posts->map(function ($post) {
-            return [
-                'id' => $post->id,
-                'title' => $post->title,
-                'article' => $post->article,
-                'view' => $post->view,
-                'user_id' => $post->user_id,
-                'created_at' => $post->created_at,
-                'updated_at' => $post->updated_at,
-                'tag_name' => $post->tags->pluck('tag_name'),
-                ];
-            });
-                    
-        $paginationLinks = [
-            [
-                'url' => null,
-                'label' => '&laquo; Previous',
-                'active' => false,
-            ],
-        ];
-    
-        for ($i = 1; $i <= $posts->lastPage(); $i++) {
-            $paginationLinks[] = [
-                'url' => $posts->url($i),
-                'label' => (string)$i,
-                'active' => $posts->currentPage() === $i,
-            ];
-        }
-    
-        $paginationLinks[] = [
-            'url' => $posts->nextPageUrl(),
-            'label' => 'Next &raquo;',
-            'active' => $posts->hasMorePages(),
-        ];
-        
-        // 전체 게시글 수가 페이지네이션 할 게시글 수 보다 작을 때
-        if($posts->total() < $posts->perPage()){
-            return response()->json($data);
-        }
-
-        return response()->json([
-            'current_page' => $posts->currentPage(),
-            'data' => $data,
-            'first_page_url' => $posts->url(1),
-            'from' => $posts->firstItem(),
-            'last_page' => $posts->lastPage(),
-            'last_page_url' => $posts->url($posts->lastPage()),
-            'links' => $paginationLinks,
-            'next_page_url' => $posts->nextPageUrl(),
-            'path' => $posts->path(),
-            'per_page' => $posts->perPage(),
-            'prev_page_url' => $posts->previousPageUrl(),
-            'to' => $posts->lastItem(),
-            'total' => $posts->total(),
-        ]);
+        return response()->json($posts);
     }
 
     // 연관 태그 검색
@@ -352,65 +274,10 @@ class PostController extends Controller
     public function userPosts($userId) {
 
         // 해당 유저의 게시글을 가져옴
-        $posts = Post::where('user_id', 'like', "$userId")
-                     ->with('tags') // 'tags' 관계 로드
-                     ->paginate(10);
+        $posts = Post::with('tags','user','comments')
+                 ->where('user_id', 'like', "$userId")
+                 ->paginate(10);
 
-        
-        $data = $posts->map(function ($post) {
-            return [
-                'id' => $post->id,
-                'title' => $post->title,
-                'article' => $post->article,
-                'view' => $post->view,
-                'user_id' => $post->user_id,
-                'created_at' => $post->created_at,
-                'updated_at' => $post->updated_at,
-                'tag_name' => $post->tags->pluck('tag_name'),
-                ];
-        });
-
-        $paginationLinks = [
-            [
-                'url' => null,
-                'label' => '&laquo; Previous',
-                'active' => false,
-            ],
-        ];
-    
-        for ($i = 1; $i <= $posts->lastPage(); $i++) {
-            $paginationLinks[] = [
-                'url' => $posts->url($i),
-                'label' => (string)$i,
-                'active' => $posts->currentPage() === $i,
-            ];
-        }
-    
-        $paginationLinks[] = [
-            'url' => $posts->nextPageUrl(),
-            'label' => 'Next &raquo;',
-            'active' => $posts->hasMorePages(),
-        ];
-    
-        // 전체 게시글 수가 페이지네이션 할 게시글 수 보다 작을 때
-        if($posts->total() < $posts->perPage()){
-            return response()->json($data);
-        }
-
-        return response()->json([
-            'current_page' => $posts->currentPage(),
-            'data' => $data,
-            'first_page_url' => $posts->url(1),
-            'from' => $posts->firstItem(),
-            'last_page' => $posts->lastPage(),
-            'last_page_url' => $posts->url($posts->lastPage()),
-            'links' => $paginationLinks,
-            'next_page_url' => $posts->nextPageUrl(),
-            'path' => $posts->path(),
-            'per_page' => $posts->perPage(),
-            'prev_page_url' => $posts->previousPageUrl(),
-            'to' => $posts->lastItem(),
-            'total' => $posts->total(),
-        ]);
+        return response()->json($posts);
     } 
 }
