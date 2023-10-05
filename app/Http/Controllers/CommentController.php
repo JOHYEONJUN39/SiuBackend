@@ -36,8 +36,15 @@ class CommentController extends Controller
     }
     
     // comment 삭제
-    public function deleteComment(string $id){
+    public function deleteComment($id){
+        $comment = Comment::find($id);
 
+        if (!$comment){
+            return response()->json(['message' => '댓글이 존재하지 않습니다.'], 404);
+        }
+        $comment->delete();
+
+        return response()->json(['message' => '댓글 삭제 성공']);
     }
 
 }
