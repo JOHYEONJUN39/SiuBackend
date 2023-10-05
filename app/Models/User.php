@@ -46,4 +46,11 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+
+    // post 테이블과 일대다 관계 정의
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
 }

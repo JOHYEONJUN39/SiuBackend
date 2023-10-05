@@ -5,6 +5,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\CommentController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 /*
@@ -71,5 +72,8 @@ Route::get('/posts/users/{userId}',[PostController::class, 'userPosts']);
 
 // 게시글 이미지 AWS(S3) 저장 및 path 반환
 Route::post('/posts/storeImage',[PostController::class,'createImage']);
+
+// 댓글 기능
+Route::post('/posts/{postId}/comment/createComment',[CommentController::Class, 'createComment']);
 
 
