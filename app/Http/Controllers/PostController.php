@@ -279,5 +279,6 @@ class PostController extends Controller
                  ->paginate(10);
 
         return response()->json($posts);
+        
     } 
 }
