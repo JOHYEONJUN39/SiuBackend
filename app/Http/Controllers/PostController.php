@@ -143,7 +143,7 @@ class PostController extends Controller
         $tags = $tagList->pluck('tag_name');
 
         // 댓글 가져오기
-        $commentData = Comment::where('post_id',$id)->get();
+        $commentData = Comment::with(['user'])->where('post_id',$id)->get();
 
         // 응답을 Json으로 생성
         return response()->json(["post" => $postData, "user" => $userData, "tags" => $tags, "comments" => $commentData]);
@@ -160,7 +160,7 @@ class PostController extends Controller
             return response()->json(['message' => '태그를 찾을 수 없습니다.'], 404);
         }
         
-        $result = Post::with(['tags', 'user', 'comments'])
+        $result = Post::with(['tags', 'user', 'comments.user'])
         ->whereHas('tags', function ($query) use ($tagName) {
             $query->where('tag_name', $tagName);
         })
@@ -171,14 +171,14 @@ class PostController extends Controller
 
     // 조회수 순 정렬 조회
     public function retrievePostView(){
-        $posts = Post::with(['tags', 'user', 'comments'])->orderBy('view','desc')->paginate(10);
+        $posts = Post::with(['tags', 'user', 'comments.user'])->orderBy('view','desc')->paginate(10);
 
         return response()->json($posts);
     }
 
     // 최근 순 정렬 조회
     public function retrieveRecentPost(){
-        $posts = Post::with(['tags', 'user', 'comments'])->orderBy('created_at','desc')->paginate(10);
+        $posts = Post::with(['tags', 'user', 'comments.user'])->orderBy('created_at','desc')->paginate(10);
 
         return response()->json($posts);
     }
@@ -248,7 +248,7 @@ class PostController extends Controller
     /* 게시글 검색 */
     // 제목+내용 연관어 검색
     public function search($search){
-        $posts = Post::with(['tags','user','comments'])->where('title','like',"$search%")
+        $posts = Post::with(['tags','user','comments.user'])->where('title','like',"$search%")
                  ->orWhere('article','like',"$search%")
                  ->paginate(10);
         
@@ -268,7 +268,7 @@ class PostController extends Controller
     public function userPosts($userId) {
 
         // 해당 유저의 게시글을 가져옴
-        $posts = Post::with('tags','user','comments')
+        $posts = Post::with('tags','user','comments.user')
                  ->where('user_id', 'like', "$userId")
                  ->paginate(10);
 
