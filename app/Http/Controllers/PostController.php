@@ -58,13 +58,8 @@ class PostController extends Controller
         $imageName = time();
         $image = $request->image;
         // 이미지를 AWS 에 저장하고 imagePath를 반환
-        $path = $this->imageHelper->storeImage($image, 'YDH', params::post);
+        $path = $this->imageHelper->storeImage($image, $imageName, params::post);
         return response()->json(['image_path' => $path]);
-    }
-
-    // 이미지 삭제
-    public function deleteImage() {
-       return $this->imageHelper->destroyImage('1695631363.jpg');
     }
 
     // 게시글 삭제
@@ -80,9 +75,8 @@ class PostController extends Controller
         // 게시글과 엮인 태그 확인 및 해당 태그들을 가진 게시물이 없을 시 삭제
         $tags = $post->tags;
 
-        // 게시글 내용에서 img 태그 안에있는 img 땡겨 오기
+        // 게시글 내용에서 img 태그 안에있는 img 가져와서 img aws 에서 삭제
         $article = $post->article;
-        // return $article;
 
         $pattern = '/src="([^"]+)"/';
 
