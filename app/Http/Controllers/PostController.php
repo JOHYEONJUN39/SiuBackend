@@ -170,7 +170,7 @@ class PostController extends Controller
         ->whereHas('tags', function ($query) use ($tagName) {
             $query->where('tag_name', $tagName);
         })
-        ->get();
+        ->paginate(10);
 
         return response()->json($result);
     }

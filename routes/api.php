@@ -78,6 +78,9 @@ Route::post('/posts/storeImage',[PostController::class,'createImage']);
 // 댓글 게시
 Route::post('/posts/{postId}/comment/createComment',[CommentController::Class, 'createComment']);
 
+// 댓글 수정
+Route::patch('/posts/comment/update/{commentId}',[CommentController::class, 'updateComment']);
+
 // 댓글 삭제
 Route::delete('/posts/comment/delete/{commentId}',[CommentController::Class, 'deleteComment']);
 

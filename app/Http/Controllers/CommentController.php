@@ -31,8 +31,22 @@ class CommentController extends Controller
 
     
     // comment 수정
-    public function updateComment(Request $request){
-        
+    public function updateComment(Request $request, $id){
+        $request->validate([
+            "comment" => "string",
+        ]);
+
+        $comment = Comment::find($id);
+
+        if(!$comment) {
+            return response()->json(['message' => '댓글을 찾을 수 없습니다.'], 404);
+        }
+
+        $comment->comment = $request->comment;
+
+        $comment->save();
+
+        return response()->json(['message' => '댓글 수정 성공']);
     }
     
     // comment 삭제
@@ -46,5 +60,4 @@ class CommentController extends Controller
 
         return response()->json(['message' => '댓글 삭제 성공']);
     }
-
 }
