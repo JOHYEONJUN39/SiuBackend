@@ -33,7 +33,4 @@ jobs:
         username: ${{secrets.EC2_USERNAME}}
         key: ${{secrets.EC2_KEY}}
         script_stop: true
-        script: |
-          sudo docker stop $(sudo docker ps -a -q)
-          sudo docker rm $(sudo docker ps -a -q)
-          sudo docker compose up
+        script: sh docker.sh
