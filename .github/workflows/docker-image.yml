@@ -25,3 +25,15 @@ jobs:
       env:
         REPO: newbiesiuuuu-backend
       run: docker push ${{secrets.DOCKER_HUB_USERNAME}}/$REPO
+
+    - name: Docker compose up in EC2
+      uses: appleboy/ssh-action@v1.0.0
+      with: 
+        host: ${{secrets.EC2_HOST}}
+        username: ${{secrets.EC2_USERNAME}}
+        key: ${{secrets.EC2_KEY}}
+        script_stop: true
+        script: |
+          docker stop $(docker ps -a -q)
+          docker rm $(docker ps -a -q)
+          docker compose up
