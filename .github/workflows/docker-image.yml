@@ -33,4 +33,4 @@ jobs:
         username: ${{secrets.EC2_USERNAME}}
         key: ${{secrets.EC2_KEY}}
         script_stop: true
-        script: sh docker.sh
+        script: sh docker.sh #백그라운드 실행
