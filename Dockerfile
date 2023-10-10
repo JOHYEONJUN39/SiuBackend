@@ -24,7 +24,7 @@ RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/bin/composer
 
 ## install packages
-RUN composer install --optimize-autoloader --no-dev
+RUN composer install -q --no-ansi --no-interaction -no--progress --optimize-autoloader --no-dev
 
 ## use 8000 port
 EXPOSE 9000
