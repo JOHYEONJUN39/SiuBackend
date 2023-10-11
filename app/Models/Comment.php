@@ -27,6 +27,6 @@ class Comment extends Model
 
     public function like()
     {
-        return $this->hasMany(Like::class);
+        return $this->hasMany(Like::class)->select('user_id', 'comment_id');
     }
 }

@@ -76,13 +76,13 @@ class CommentController extends Controller
         $commentId = $request->comment_id;
         $userId = $request->user_id;
 
-        // $checkDupLike = Like::where('user_id',$userId)
-        //                     ->where('comment_id',$commentId)
-        //                     ->get();
+        $checkDupLike = Like::where('user_id',$userId)
+                            ->where('comment_id',$commentId)
+                            ->get();
         
-        // if(!$checkDupLike->isEmpty()) {
-        //     return response()->json(['message' => '이미 좋아요한 댓글입니다.']);
-        // }
+        if(!$checkDupLike->isEmpty()) {
+            return response()->json(['message' => '이미 좋아요한 댓글입니다.']);
+        }
 
         try{
             $like = Like::create([
@@ -92,8 +92,9 @@ class CommentController extends Controller
 
             // 댓글 좋아요 수
             $likeCount = DB::table('likes')
-                        ->where('id',$like->id)
-                        ->count();
+                           ->where('comment_id',$commentId)
+                           ->groupBy('comment_id')
+                           ->count();
             
             // 댓글 좋아요 수 업데이트
             Comment::where('id',$commentId)
@@ -124,7 +125,8 @@ class CommentController extends Controller
 
         // 댓글 좋아요 수
         $likeCount = DB::table('likes')
-        ->where('id',$like->id)
+        ->where('comment_id',$commentId)
+        ->groupBy('comment_id')
         ->count();
 
         // 댓글 좋아요 수 업데이트
