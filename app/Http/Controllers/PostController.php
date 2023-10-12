@@ -8,12 +8,15 @@ use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Comment;
+use App\Models\Like;
 use App\Helpers\ImageHelper;
 use App\Models\PostImage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use App\Helpers\params;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
 {
@@ -114,6 +117,12 @@ class PostController extends Controller
     // 특정 id로 조회
 
     public function retrievePostId($id){
+        if(Auth::check()){
+            $loginId = Auth::user()->id;
+        } else {
+            $loginId = "";
+        }
+
         // 요청된 ID에 해당하는 게시글 탐색
         $post = Post::find($id);
 
@@ -145,12 +154,28 @@ class PostController extends Controller
         // 댓글 가져오기
         $commentData = Comment::with(['user'])->where('post_id',$id)->get();
 
+        foreach($commentData as $comment){
+            $likedList = Like::where('comment_id',$comment->id)->where('user_id',$loginId)->get();
+            if($likedList->count() === 0){
+                $comment->liked = false;
+            }else{
+                $comment->liked = true;
+            }
+        }
+        
+        // 각각 댓글에 좋아요를 누른 사람의 데이터를 로그인된 데이터와 비교하여 존재하면 true 아니면 false 를 반환하라
+        
         // 응답을 Json으로 생성
         return response()->json(["post" => $postData, "user" => $userData, "tags" => $tags, "comments" => $commentData]);
     } 
 
     // 특정 태그로 조회
     public function retrievePostTagId(Request $request){
+        if(Auth::check()){
+            $loginId = Auth::user()->id;
+        } else {
+            $loginId = "";
+        }
 
         $tagName = $request->input('tag');
         // 요청 받은 태그를 가진 게시물을 검색
@@ -166,20 +191,69 @@ class PostController extends Controller
         })
         ->paginate(10);
 
+        $commentData = $result->flatMap(function ($post) {
+            return $post->comments;
+        });
+
+        foreach($commentData as $comment){
+            $likedList = Like::where('comment_id',$comment->id)->where('user_id',$loginId)->get();
+            if($likedList->count() === 0){
+                $comment->liked = false;
+            }else{
+                $comment->liked = true;
+            }
+        }
         return response()->json($result);
     }
 
     // 조회수 순 정렬 조회
     public function retrievePostView(){
+        if(Auth::check()){
+            $loginId = Auth::user()->id;
+        } else {
+            $loginId = "";
+        }
         $posts = Post::with(['tags', 'user', 'comments.user'])->orderBy('view','desc')->paginate(10);
+
+        $commentData = $posts->flatMap(function ($post) {
+            return $post->comments;
+        });
+
+        foreach($commentData as $comment){
+            $likedList = Like::where('comment_id',$comment->id)->where('user_id',$loginId)->get();
+            if($likedList->count() === 0){
+                $comment->liked = false;
+            }else{
+                $comment->liked = true;
+            }
+        }
 
         return response()->json($posts);
     }
 
     // 최근 순 정렬 조회
     public function retrieveRecentPost(){
+        if(Auth::check()){
+            $loginId = Auth::user()->id;
+        } else {
+            $loginId = "";
+        }
+
         $posts = Post::with(['tags', 'user', 'comments.user'])->orderBy('created_at','desc')->paginate(10);
 
+        $commentData = $posts->flatMap(function ($post) {
+            return $post->comments;
+        });
+
+        foreach($commentData as $comment){
+            $likedList = Like::where('comment_id',$comment->id)->where('user_id',$loginId)->get();
+            if($likedList->count() === 0){
+                $comment->liked = false;
+            }else{
+                $comment->liked = true;
+            }
+        }
+        
         return response()->json($posts);
     }
 
@@ -248,30 +322,65 @@ class PostController extends Controller
     /* 게시글 검색 */
     // 제목+내용 연관어 검색
     public function search($search){
+        if(Auth::check()){
+            $loginId = Auth::user()->id;
+        } else {
+            $loginId = "";
+        }
+
         $posts = Post::with(['tags','user','comments.user'])->where('title','like',"$search%")
                  ->orWhere('article','like',"$search%")
                  ->paginate(10);
+
+        $commentData = $posts->flatMap(function ($post) {
+            return $post->comments;
+        });
+
+        foreach($commentData as $comment){
+            $likedList = Like::where('comment_id',$comment->id)->where('user_id',$loginId)->get();
+            if($likedList->count() === 0){
+                $comment->liked = false;
+            }else{
+                $comment->liked = true;
+            }
+        }
         
         return response()->json($posts);
     }
 
     // 연관 태그 검색
     public function relatedPostTags($tag){
-
         // 태그와 연관된 게시물을 가져옴
         $posts = Tag::where('tag_name', 'like', "$tag%")->simplePaginate(10);
-        
+
         return response()->json(['tags' => $posts->map(function($post) {return $post->tag_name;})]);
     }
 
     // 유저 아이디로 게시글 검색
     public function userPosts($userId) {
+        if(Auth::check()){
+            $loginId = Auth::user()->id;
+        } else {
+            $loginId = "";
+        }
 
         // 해당 유저의 게시글을 가져옴
         $posts = Post::with('tags','user','comments.user')
                  ->where('user_id', 'like', "$userId")
                  ->paginate(10);
 
+        $commentData = $posts->flatMap(function ($post) {
+            return $post->comments;
+        });
+
+        foreach($commentData as $comment){
+            $likedList = Like::where('comment_id',$comment->id)->where('user_id',$loginId)->get();
+            if($likedList->count() === 0){
+                $comment->liked = false;
+            }else{
+                $comment->liked = true;
+            }
+        }
         return response()->json($posts);
         
     } 
