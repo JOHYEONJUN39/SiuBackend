@@ -111,16 +111,20 @@ class CommentController extends Controller
     // 좋아요 취소
     public function unlike(Request $request){
         $request->validate([
-            "like_id" => "integer",
+            "comment_id" => "integer",
+            "user_id" => "string"
         ]);
 
-        $likeId = $request->like_id;
-        $like = Like::find($likeId);
-        
+        $commentId = $request->comment_id;
+        $userId = $request->user_id;
+        $like = Like::where('user_id',$userId)
+        ->where('comment_id',$commentId)
+        ->first();
+
         if(!$like) {
             return response()->json(['message' => '좋아요 기록이 없습니다.'], 404);
         }
-        $commentId = $like->comment_id;
+
         $like->delete();
 
         // 댓글 좋아요 수
