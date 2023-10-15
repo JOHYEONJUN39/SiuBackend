@@ -329,7 +329,7 @@ class PostController extends Controller
         }
 
         $posts = Post::with(['tags','user','comments.user'])->where('title','like',"$search%")
-                 ->orWhere('article','like',"$search%")
+                 ->orWhere('article','like',"%$search%")
                  ->paginate(10);
 
         $commentData = $posts->flatMap(function ($post) {
