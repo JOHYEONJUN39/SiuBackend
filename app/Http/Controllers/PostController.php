@@ -367,6 +367,7 @@ class PostController extends Controller
         // 해당 유저의 게시글을 가져옴
         $posts = Post::with('tags','user','comments.user')
                  ->where('user_id', 'like', "$userId")
+                 ->orderBy('created_at', 'desc')
                  ->paginate(10);
 
         $commentData = $posts->flatMap(function ($post) {

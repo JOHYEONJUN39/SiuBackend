@@ -76,13 +76,13 @@ Route::post('/posts/storeImage',[PostController::class,'createImage']);
 // 댓글 기능
 
 // 댓글 게시
-Route::post('/comment/createComment',[CommentController::Class, 'createComment']);
+Route::post('/comment/createComment',[CommentController::class, 'createComment']);
 
 // 댓글 수정
 Route::patch('/comment/update',[CommentController::class, 'updateComment']);
 
 // 댓글 삭제
-Route::delete('/comment/delete',[CommentController::Class, 'deleteComment']);
+Route::delete('/comment/delete',[CommentController::class, 'deleteComment']);
        
 // 좋아요 추가
 Route::post('/comment/like',[CommentController::class, 'like']);
